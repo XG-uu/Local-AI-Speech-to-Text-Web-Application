@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>本地语音识别 · Local Speech to Text</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%234f46e5'/%3E%3Cpath d='M32 16a7 7 0 0 1 7 7v9a7 7 0 0 1-14 0v-9a7 7 0 0 1 7-7Zm-13 16a13 13 0 0 0 26 0M32 45v7' stroke='white' stroke-width='4' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">LOCAL · PRIVATE · CPU READY</p>
+        <h1>本地语音识别</h1>
+        <p class="subtitle">中文 / English 语音转文字 · faster-whisper · 全程本机推理</p>
+      </div>
+      <div class="status-panel" aria-live="polite">
+        <span id="statusBadge" class="badge badge-idle">空闲</span>
+        <span id="modelInfo" class="model-info">模型状态加载中…</span>
+      </div>
+    </header>
+
+    <section class="card language-card" aria-labelledby="languageTitle">
+      <div class="section-heading">
+        <h2 id="languageTitle">识别语言</h2>
+        <span class="hint-inline">识别结果语言与选择一致，不做翻译</span>
+      </div>
+      <div class="segmented" role="group" aria-label="识别语言">
+        <button type="button" class="segment" data-language="zh" aria-pressed="true">中文</button>
+        <button type="button" class="segment" data-language="en" aria-pressed="false">English</button>
+        <button type="button" class="segment" data-language="auto" aria-pressed="false">自动检测<span class="tag">实验</span></button>
+      </div>
+    </section>
+
+    <div class="grid">
+      <section class="card record-card" aria-labelledby="recordTitle">
+        <div class="card-heading">
+          <h2 id="recordTitle">麦克风录音</h2>
+          <span class="card-kicker" id="recordLimitKicker">最长 60 秒</span>
+        </div>
+
+        <div class="timer" aria-live="polite">
+          <span id="recordTimer">00:00</span>
+          <span class="timer-limit" id="timerLimit">/ 01:00</span>
+        </div>
+        <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="60" aria-valuenow="0" id="recordProgressBar">
+          <div id="recordProgress" class="progress-fill"></div>
+        </div>
+
+        <div class="button-row">
+          <button type="button" id="startBtn" class="btn btn-primary">
+            <span class="icon-dot" aria-hidden="true"></span>开始录音
+          </button>
+          <button type="button" id="stopBtn" class="btn btn-danger" disabled>
+            <span class="icon-stop" aria-hidden="true"></span>停止录音
+          </button>
+        </div>
+
+        <label class="switch-row">
+          <input type="checkbox" id="realtimeToggle">
+          <span class="switch" aria-hidden="true"></span>
+          <span>实时识别<span class="tag">实验</span></span>
+        </label>
+        <p class="hint" id="recordHint">点击开始录音，浏览器会请求麦克风权限。</p>
+      </section>
+
+      <section class="card upload-card" aria-labelledby="uploadTitle">
+        <div class="card-heading">
+          <h2 id="uploadTitle">上传音频</h2>
+          <span class="card-kicker" id="uploadLimitKicker">最大 10 MB</span>
+        </div>
+
+        <label class="drop-zone" id="dropZone" for="fileInput" tabindex="0">
+          <span class="drop-icon" aria-hidden="true">↑</span>
+          <span class="drop-title">点击选择或拖拽音频到这里</span>
+          <span class="drop-sub">WAV · WebM · OGG · MP3 · M4A</span>
+          <input type="file" id="fileInput" accept=".wav,.webm,.ogg,.mp3,.m4a,.mp4,audio/*" hidden>
+        </label>
+
+        <div class="file-meta" id="fileMeta">尚未选择文件</div>
+        <button type="button" id="uploadBtn" class="btn btn-secondary" disabled>上传并识别</button>
+        <p class="hint" id="uploadHint">上传文件不会保存到磁盘，仅在本机内存中处理。</p>
+      </section>
+    </div>
+
+    <section class="card result-card" aria-labelledby="resultTitle">
+      <div class="card-heading result-heading">
+        <div>
+          <h2 id="resultTitle">识别结果</h2>
+          <p class="hint-inline" id="currentLanguageLabel">当前语言：中文</p>
+        </div>
+        <button type="button" id="copyBtn" class="btn btn-ghost" disabled>复制文本</button>
+      </div>
+
+      <dl class="meta-grid">
+        <div><dt>识别语言</dt><dd id="resultLanguage">—</dd></div>
+        <div><dt>音频时长</dt><dd id="resultDuration">—</dd></div>
+        <div><dt>处理耗时</dt><dd id="resultProcessing">—</dd></div>
+        <div><dt>模型</dt><dd id="resultModel">—</dd></div>
+      </dl>
+
+      <div id="realtimePreviewWrap" class="realtime-preview" hidden>
+        <p class="preview-label">实时预览 <span>最终结果以停止后的整段识别为准</span></p>
+        <p id="realtimePreview" class="preview-text">等待语音…</p>
+      </div>
+
+      <textarea id="resultText" class="result-text" readonly placeholder="识别完成后，文字会显示在这里。" aria-label="识别文本"></textarea>
+      <p class="empty-hint" id="emptyHint" hidden>未检测到可识别语音，请靠近麦克风、提高音量后重试。</p>
+    </section>
+
+    <div id="errorBanner" class="banner banner-error" role="alert" hidden>
+      <span id="errorText"></span>
+      <button type="button" id="dismissError" class="banner-close" aria-label="关闭错误提示">×</button>
+    </div>
+
+    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+    <footer class="footer">
+      <p>音频仅发送到本机 <strong>127.0.0.1</strong>，不会上传到云端。首次识别会加载本地模型，可能需要稍等。</p>
+      <p class="footer-links"><a href="/health" target="_blank" rel="noreferrer">健康检查</a><span>·</span><a href="/docs" target="_blank" rel="noreferrer">API 文档</a></p>
+    </footer>
+  </main>
+
+  <script src="/static/js/app.js" defer></script>
+</body>
+</html>

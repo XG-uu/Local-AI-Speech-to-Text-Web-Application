@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local ASR model weights (large, downloaded on demand)
+models/
+
+# Logs and OS files
+*.log
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/

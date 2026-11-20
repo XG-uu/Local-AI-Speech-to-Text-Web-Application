@@ -1,0 +1,5 @@
+chinese.wav
+你好，欢迎使用本地语音识别系统。今天天气很好，适合在户外散步。
+
+english.wav
+Hello, welcome to the local speech recognition system. Today is a nice day for a walk outside.
